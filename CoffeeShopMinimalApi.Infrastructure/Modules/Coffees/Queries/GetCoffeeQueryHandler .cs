@@ -1,6 +1,8 @@
 ﻿using CoffeeShopMinimalApi.Infrastructure.Context;
 using CoffeeShopMinimalApi.Infrastructure.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace CoffeeShopMinimalApi.Infrastructure.Modules.Coffees.Queries
 {
@@ -25,7 +27,8 @@ namespace CoffeeShopMinimalApi.Infrastructure.Modules.Coffees.Queries
 
 		public async Task<GetCoffeeQueryResponse> Handle(GetCoffeeQuery request, CancellationToken cancellationToken)
 		{
-			var coffee = await _context.Coffees.FindAsync(request.Id);
+			var coffee = await _context.Coffees
+				.Where(entity => entity.Id == request.Id).FirstOrDefaultAsync();
 			return new GetCoffeeQueryResponse
 			{
 				Coffee = coffee
