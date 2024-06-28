@@ -1,6 +1,7 @@
 ﻿using CoffeeShopMinimalApi.Infrastructure.Context;
 using CoffeeShopMinimalApi.Infrastructure.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoffeeShopMinimalApi.Infrastructure.Modules.Ingredients.Queries
 {
@@ -25,7 +26,9 @@ namespace CoffeeShopMinimalApi.Infrastructure.Modules.Ingredients.Queries
 
 		public async Task<GetIngredientQueryResponse> Handle(GetIngredientQuery request, CancellationToken cancellationToken)
 		{
-			var ingredient = await _context.Ingredients.FindAsync(request.Id);
+			var ingredient = await _context.Ingredients
+				.Where(entity => entity.Id == request.Id).FirstOrDefaultAsync();
+
 			return new GetIngredientQueryResponse
 			{
 				Ingredient = ingredient

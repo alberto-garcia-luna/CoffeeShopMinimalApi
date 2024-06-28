@@ -17,22 +17,28 @@ namespace CoffeeShopMinimalApi.Tests.UnitTests
 	{
 		private ICoffeeEndpoint _coffeeEndpoint;
 		private IList<Coffee> _coffees;
-		private IList<Ingredient> _ingredients;
+		private Mock<CoffeeShopDbContext> _mockContextDbContext;
 		private Guid _validCoffeeId;
 
 		[SetUp]
 		public void Setup()
 		{
-			GetTestData();
+			_coffees = TestDataGenerator.GetTestCoffees();
+			_validCoffeeId = _coffees.FirstOrDefault().Id;
+
 			var services = new ServiceCollection();
-			var mockContext = new Mock<CoffeeShopDbContext>();
+			_mockContextDbContext = new Mock<CoffeeShopDbContext>();
+			
+			_mockContextDbContext.Setup(c => c.Coffees).ReturnsDbSet(_coffees);
+			_mockContextDbContext.Setup(c => c.Coffees.Add(It.IsAny<Coffee>())).Callback(_coffees.Add);
+			_mockContextDbContext.Setup(c => c.Coffees.Remove(It.IsAny<Coffee>())).Callback<Coffee>((item) => _coffees.Remove(item));
+			_mockContextDbContext.Setup(i => i.Coffees.Update(It.IsAny<Coffee>())).Callback<Coffee>(
+				(item) => {
+					_coffees.Remove(item);
+					_coffees.Add(item);
+				});
 
-			mockContext.Setup(i => i.Ingredients).ReturnsDbSet(_ingredients);
-			mockContext.Setup(i => i.Ingredients.Add(It.IsAny<Ingredient>())).Callback(_ingredients.Add);
-			mockContext.Setup(c => c.Coffees).ReturnsDbSet(_coffees);
-			mockContext.Setup(c => c.Coffees.Add(It.IsAny<Coffee>())).Callback(_coffees.Add);
-
-			services.AddTransient(opt => { return mockContext.Object; });
+			services.AddTransient(opt => { return _mockContextDbContext.Object; });
 
 			var serviceProvider = services
 				.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(GetCoffeesQueryHandler).Assembly))
@@ -73,10 +79,46 @@ namespace CoffeeShopMinimalApi.Tests.UnitTests
 		}
 
 		[Test]
+		public async Task GetAllCoffeesReturnsValuesIfExists()
+		{
+			// Arrange
+			// Act
+			var response = await _coffeeEndpoint.GetAll();
+
+			//Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<Ok<IEnumerable<CoffeeDto>>>(response);
+
+			var result = (Ok<IEnumerable<CoffeeDto>>)response;
+			Assert.NotNull(result.Value);
+			Assert.That(result.Value.Count, Is.EqualTo(_mockContextDbContext.Object.Coffees.Count()));
+		}
+
+		[Test]
+		public async Task GetCoffeeIngredientsReturnsValuesIfExists()
+		{
+			// Arrange
+			var ingredientsList = _mockContextDbContext.Object.Coffees
+				.FirstOrDefault(item => item.Id.Equals(_validCoffeeId))?
+				.Ingredients;
+
+			// Act
+			var response = await _coffeeEndpoint.GetCoffeeIngredients(_validCoffeeId);
+
+			// Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<Ok<IEnumerable<IngredientDto>>>(response);
+			
+			var result = (Ok<IEnumerable<IngredientDto>>)response;
+			Assert.NotNull(result.Value);
+			Assert.That(result.Value.Count, Is.EqualTo(ingredientsList?.Count()));
+		}
+
+		[Test]
 		public async Task CreateCoffeeAddItemToCollection()
 		{
 			// Arrange
-			var coffeeListSize = _coffees.ToList().Count;
+			var coffeesListSize = _mockContextDbContext.Object.Coffees.Count();
 			var coffeDto = new CoffeeDto
 			{
 				Name = "Test Coffee",
@@ -97,42 +139,90 @@ namespace CoffeeShopMinimalApi.Tests.UnitTests
 			var result = (Created<CoffeeDto>)response;
 
 			Assert.NotNull(result.Value);
-			Assert.That(_coffees.ToList().Count, Is.EqualTo(coffeeListSize + 1));
-			Assert.IsTrue(_coffees.ToList().Exists(item => item.Name.Equals(coffeDto.Name)));
+			Assert.That(_mockContextDbContext.Object.Coffees.Count, Is.EqualTo(coffeesListSize + 1));
+			Assert.IsTrue(_mockContextDbContext.Object.Coffees.ToList().Exists(item => item.Name.Equals(coffeDto.Name)));
 		}
 
-		private void GetTestData()
+		[Test]
+		public async Task UpdateCoffeeReturnsNotFoundIfNotExists()
 		{
-			_validCoffeeId = Guid.NewGuid();
-			_ingredients =
-			[
-				new Ingredient()
+			// Arrange
+			var invalidGuid = Guid.Empty;
+			var coffeDto = new CoffeeDto
+			{
+				Id = invalidGuid,
+				Name = "Test Coffee",
+				Price = 10,
+				Ingredients = new List<IngredientDto>
 				{
-					Id = Guid.NewGuid(),
-					Name = "Roasted Coffee"
-				},
-				new Ingredient()
-				{
-					Id = Guid.NewGuid(),
-					Name = "Milk"
-				},
-				new Ingredient()
-				{
-					Id = Guid.NewGuid(),
-					Name = "Water"
-				},
-			];
-
-			_coffees =
-			[
-				new Coffee()
-				{
-					Id = _validCoffeeId,
-					Name = "Cappuccino",
-					Price = 50,
-					Ingredients = _ingredients
+					new IngredientDto { Name = "Test Ingredient" }
 				}
-			];
+			};
+
+			// Act
+			var response = await _coffeeEndpoint.Update(invalidGuid, coffeDto);
+
+			//Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<NotFound>(response);
+		}
+
+		[Test]
+		public async Task UpdateCoffeeUpdateItemFromCollection()
+		{
+			// Arrange
+			var coffeDto = new CoffeeDto
+			{
+				Id = _validCoffeeId,
+				Name = "Test Coffee",
+				Price = 10,
+				Ingredients = new List<IngredientDto>
+				{
+					new IngredientDto { Name = "Test Ingredient" }
+				}
+			};
+
+			// Act
+			var response = await _coffeeEndpoint.Update(_validCoffeeId, coffeDto);
+
+			//Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<NoContent>(response);
+
+			var coffeeInList = 
+				_mockContextDbContext.Object.Coffees.FirstOrDefault(item => item.Id.Equals(_validCoffeeId));
+			Assert.NotNull(coffeeInList);
+			Assert.That(coffeeInList.Name, Is.EqualTo(coffeDto.Name));
+		}
+
+		[Test]
+		public async Task DeleteCoffeeReturnsNotFoundIfNotExists()
+		{
+			// Arrange
+			var invalidGuid = Guid.Empty;
+
+			// Act
+			var response = await _coffeeEndpoint.Delete(invalidGuid);
+
+			//Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<NotFound>(response);
+		}
+
+		[Test]
+		public async Task DeleteCoffeeRemoveItemFromCollection()
+		{
+			// Arrange
+			var coffeesListSize = _mockContextDbContext.Object.Coffees.Count();
+
+			// Act
+			var response = await _coffeeEndpoint.Delete(_validCoffeeId);
+
+			// Assert
+			Assert.NotNull(response);
+			Assert.IsInstanceOf<NoContent>(response);
+
+			Assert.That(_mockContextDbContext.Object.Coffees.Count, Is.EqualTo(coffeesListSize - 1));
 		}
 	}
 }

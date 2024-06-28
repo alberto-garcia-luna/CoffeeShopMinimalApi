@@ -29,6 +29,7 @@ namespace CoffeeShopMinimalApi.Infrastructure.Modules.Coffees.Queries
 		{
 			var coffee = await _context.Coffees
 				.Where(entity => entity.Id == request.Id).FirstOrDefaultAsync();
+
 			return new GetCoffeeQueryResponse
 			{
 				Coffee = coffee

@@ -11,7 +11,6 @@ namespace CoffeeShopMinimalApi.Infrastructure.Extensions
 	{
 		public static void RegisterInfrastructureServices(this WebApplicationBuilder builder)
 		{
-			//builder.Services.AddDbContext<CoffeeShopDbContext>(opt => opt.UseInMemoryDatabase("CoffeeDB"));
 			builder.Services.AddDbContext<CoffeeShopDbContext>(opt =>
 				opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
 				b => b.MigrationsAssembly("CoffeeShopMinimalApi.Infrastructure"))
