@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>37633698-6563-405f-9a3a-87aca6463992</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>    
@@ -18,5 +19,4 @@
   <ItemGroup>
     <ProjectReference Include="..\CoffeeShopMinimalApi.Infrastructure\CoffeeShopMinimalApi.Infrastructure.csproj" />
   </ItemGroup>
-
 </Project>

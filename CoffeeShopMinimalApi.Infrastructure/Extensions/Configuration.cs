@@ -1,6 +1,8 @@
 ﻿using CoffeeShopMinimalApi.Infrastructure.Context;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -18,6 +20,21 @@ namespace CoffeeShopMinimalApi.Infrastructure.Extensions
 
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 			builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(Assembly.GetExecutingAssembly()));
+		}
+
+		public static void RegisterInfrastructureMiddlewares(this WebApplication app)
+		{
+			using (var scope = app.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
+
+				var context = services.GetRequiredService<CoffeeShopDbContext>();
+				if (context.Database.GetPendingMigrations().Any() &&
+					!((RelationalDatabaseCreator)context.Database.GetService<IDatabaseCreator>()).Exists())
+				{
+					context.Database.Migrate();
+				}
+			}
 		}
 	}
 }

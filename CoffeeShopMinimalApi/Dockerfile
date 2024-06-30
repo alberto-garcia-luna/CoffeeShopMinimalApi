@@ -10,6 +10,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["CoffeeShopMinimalApi/CoffeeShopMinimalApi.csproj", "CoffeeShopMinimalApi/"]
+COPY ["CoffeeShopMinimalApi.Infrastructure/CoffeeShopMinimalApi.Infrastructure.csproj", "CoffeeShopMinimalApi.Infrastructure/"]
 RUN dotnet restore "./CoffeeShopMinimalApi/CoffeeShopMinimalApi.csproj"
 COPY . .
 WORKDIR "/src/CoffeeShopMinimalApi"

@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+  coffeeshopminimalapi:
+    image: ${DOCKER_REGISTRY-}coffeeshopminimalapi
+    build:
+      context: .
+      dockerfile: CoffeeShopMinimalApi/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=CoffeeDb;User=sa;Password=P@ssword;Trusted_Connection=False;TrustServerCertificate=True;
+    depends_on:
+      - db
+    command: ["dotnet", "ef", "database update"]
+  db:
+    image: mcr.microsoft.com/mssql/server
+    volumes:
+      - ./data:/var/opt/mssql/data
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
