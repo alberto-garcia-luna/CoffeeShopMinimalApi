@@ -1,6 +1,8 @@
 ﻿using CoffeeShopMinimalApi.Infrastructure.Context;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -27,7 +29,8 @@ namespace CoffeeShopMinimalApi.Infrastructure.Extensions
 				var services = scope.ServiceProvider;
 
 				var context = services.GetRequiredService<CoffeeShopDbContext>();				
-				if (context.Database.GetPendingMigrations().Any())
+				if (context.Database.GetPendingMigrations().Any() &&
+					!context.Database.GetService<IRelationalDatabaseCreator>().Exists())
 				{
 					context.Database.EnsureCreated();
 				}
