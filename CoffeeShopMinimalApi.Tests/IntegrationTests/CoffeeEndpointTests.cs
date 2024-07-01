@@ -16,8 +16,8 @@ namespace CoffeeShopMinimalApi.Tests.IntegrationTests
 	{
 		private ICoffeeEndpoint _coffeeEndpoint;
 
-		[SetUp]
-		public void Setup()
+		[OneTimeSetUp]
+		public void OneTimeSetUp()
 		{
 			var services = new ServiceCollection();
 			var mockContextDbContext = new Mock<CoffeeShopDbContext>();
