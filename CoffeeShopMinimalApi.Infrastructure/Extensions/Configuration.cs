@@ -22,7 +22,7 @@ namespace CoffeeShopMinimalApi.Infrastructure.Extensions
 			builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(Assembly.GetExecutingAssembly()));
 		}
 
-		public static void RegisterInfrastructureMiddlewares(this WebApplication app)
+		public async static void RegisterInfrastructureMiddlewares(this WebApplication app)
 		{
 			using (var scope = app.Services.CreateScope())
 			{
@@ -32,7 +32,7 @@ namespace CoffeeShopMinimalApi.Infrastructure.Extensions
 				if (context.Database.GetPendingMigrations().Any() &&
 					!context.Database.GetService<IRelationalDatabaseCreator>().Exists())
 				{
-					context.Database.EnsureCreated();
+					await context.Database.EnsureCreatedAsync();
 				}
 			}
 		}

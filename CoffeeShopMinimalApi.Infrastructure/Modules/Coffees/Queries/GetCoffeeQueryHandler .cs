@@ -2,7 +2,6 @@
 using CoffeeShopMinimalApi.Infrastructure.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace CoffeeShopMinimalApi.Infrastructure.Modules.Coffees.Queries
 {

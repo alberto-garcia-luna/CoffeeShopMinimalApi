@@ -26,7 +26,7 @@ namespace CoffeeShopMinimalApi.TestContainers
 		{
 			var services = new ServiceCollection();
 			var container = new SqlEdgeBuilder()
-				.WithImage("mcr.microsoft.com/azure-sql-edge")
+				.WithImage("mcr.microsoft.com/mssql/server")
 				.Build();
 
 			await container.StartAsync();
